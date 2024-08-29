@@ -10,43 +10,38 @@ if (!isset($_SESSION['is_logged_in']) || $_SESSION['role'] !== 'teacher') {
 
 // Verkrijg de class gegevens om te bewerken
 $class = null;
+
 if (isset($_GET['id']) && !empty($_GET['id'])) {
     $id = $_GET['id'];
-
-    // Debugging: Controleer de waarde van $id
-    var_dump($id);
+    //var_dump($_GET); // Debugging: 
 
     $stmt = $pdo->prepare("SELECT * FROM classes WHERE id = :id");
     $stmt->bindParam(':id', $id, PDO::PARAM_INT);
     $stmt->execute();
     $class = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    // Debugging: Controleer de opgehaalde gegevens
-    var_dump($class);
+    //var_dump($class); // Debugging: Controleer de opgehaalde gegevens
 
     if (!$class) {
         echo "Klas niet gevonden.";
         exit();
     }
-} else {
-    echo "Geen klas ID opgegeven.";
-    exit();
 }
-
 // Verwerk het formulier bij een POST-verzoek
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    //var_dump($_POST); // Debugging: Controleer de POST-gegevens
+
     $id = $_POST['id'];
     $name = $_POST['name'];
-
-    // Debugging: Controleer de POST-gegevens
-    var_dump($_POST);
 
     $stmt = $pdo->prepare("UPDATE classes SET name = :name WHERE id = :id");
     $stmt->bindParam(':name', $name);
     $stmt->bindParam(':id', $id, PDO::PARAM_INT);
 
     if ($stmt->execute()) {
-        echo "Klas bijgewerkt.";
+        $msg = "Klas bijgewerkt.";
+        // Redirect naar de bewerkpagina met ID in de URL
+        header("Location: edit_class.php?id=" . urlencode($id) . '&message='.$msg);
+        exit();
     } else {
         echo "Fout bij bijwerken van klas.";
     }
@@ -61,25 +56,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
     <h1>Bewerk Klas</h1>
-    <form action="edit_class.php" method="POST" autocomplete="off">
+    <form action="edit_class.php" method="POST">
         <input type="hidden" name="id" value="<?php echo htmlspecialchars($class['id']); ?>">
         <label for="name">Naam:</label>
-        <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($class['name']); ?>" required autocomplete="off">
+        <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($class['name']); ?>" required>
         <br>
         <input type="submit" value="Bijwerken">
     </form>
     <p><a href="teacher_dashboard.php">Terug naar dashboard</a></p>
     
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelector('form').addEventListener('submit', function(e) {
-            var id = document.querySelector('input[name="id"]').value;
-            var action = this.action;
-            if (!action.includes('id=')) {
-                this.action += (action.includes('?') ? '&' : '?') + 'id=' + encodeURIComponent(id);
-            }
-        });
-    });
-    </script>
+
 </body>
 </html>
